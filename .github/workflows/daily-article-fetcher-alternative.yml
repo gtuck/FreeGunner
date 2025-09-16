@@ -1,0 +1,341 @@
+# .github/workflows/daily-article-fetcher-alternative.yml
+name: Daily Firearms News Article Fetcher (Alternative)
+
+on:
+  schedule:
+    # Run daily at 9:00 AM UTC (adjust timezone as needed)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allows manual triggering for testing
+
+permissions:
+  contents: write # Required to commit files to the repository
+
+jobs:
+  fetch-article:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 lxml feedparser
+        
+    - name: Fetch and process article
+      run: |
+        cat > fetch_article_alt.py << 'EOF'
+        import requests
+        import feedparser
+        from bs4 import BeautifulSoup
+        import os
+        import re
+        import time
+        from datetime import datetime
+        from urllib.parse import urljoin, quote
+        import random
+
+        def fetch_rss_feed():
+            """Fetch and parse the RSS feed to get the latest article using multiple methods."""
+            rss_url = 'https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589'
+            
+            # Method 1: Try with comprehensive headers and session
+            try:
+                session = requests.Session()
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Referer': 'https://www.firearmsnews.com/',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'same-origin'
+                }
+                
+                print("Method 1: Trying direct RSS access with enhanced headers...")
+                response = session.get(rss_url, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    print("✓ Direct RSS access successful!")
+                    feed = feedparser.parse(response.content)
+                    if feed.entries:
+                        entry = feed.entries[0]
+                        return {
+                            'title': entry.title,
+                            'link': entry.link,
+                            'pub_date': entry.published,
+                            'description': getattr(entry, 'description', '')
+                        }
+                else:
+                    print(f"✗ Direct access failed with status: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"✗ Method 1 failed: {e}")
+            
+            # Method 2: Try through RSS proxy services
+            try:
+                print("Method 2: Trying RSS proxy services...")
+                proxy_urls = [
+                    f"https://api.rss2json.com/v1/api.json?rss_url={quote(rss_url)}",
+                    f"https://rss-proxy.herokuapp.com/proxy?url={quote(rss_url)}",
+                ]
+                
+                for proxy_url in proxy_urls:
+                    try:
+                        print(f"Trying proxy: {proxy_url}")
+                        response = requests.get(proxy_url, timeout=30)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if 'items' in data and data['items']:
+                                item = data['items'][0]
+                                return {
+                                    'title': item.get('title', ''),
+                                    'link': item.get('link', ''),
+                                    'pub_date': item.get('pubDate', ''),
+                                    'description': item.get('description', '')
+                                }
+                    except Exception as e:
+                        print(f"Proxy failed: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"✗ Method 2 failed: {e}")
+            
+            # Method 3: Scrape the main articles page
+            try:
+                print("Method 3: Trying to scrape main articles page...")
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Referer': 'https://www.google.com/'
+                }
+                
+                # Try the main editorial page
+                response = requests.get('https://www.firearmsnews.com/editorial', headers=headers, timeout=30)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # Look for article links (adjust selectors as needed)
+                    article_links = soup.find_all('a', href=re.compile(r'/editorial/.*'))
+                    if article_links:
+                        first_article = article_links[0]
+                        title = first_article.get_text().strip()
+                        link = urljoin('https://www.firearmsnews.com', first_article['href'])
+                        
+                        return {
+                            'title': title,
+                            'link': link,
+                            'pub_date': datetime.now().strftime('%a, %d %b %Y %H:%M:%S %Z'),
+                            'description': ''
+                        }
+                        
+            except Exception as e:
+                print(f"✗ Method 3 failed: {e}")
+            
+            raise Exception("All methods to fetch RSS feed failed")
+
+        def fetch_article_content(url):
+            """Fetch the full article content from the URL."""
+            try:
+                # Random delay to avoid being detected as bot
+                time.sleep(random.uniform(2, 5))
+                
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'DNT': '1',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Referer': 'https://www.firearmsnews.com/',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'same-origin'
+                }
+                
+                session = requests.Session()
+                
+                for attempt in range(3):
+                    try:
+                        print(f"Attempt {attempt + 1} to fetch article content...")
+                        response = session.get(url, headers=headers, timeout=30)
+                        response.raise_for_status()
+                        break
+                    except requests.exceptions.RequestException as e:
+                        print(f"Attempt {attempt + 1} failed: {e}")
+                        if attempt < 2:
+                            wait_time = (attempt + 1) * 10
+                            print(f"Waiting {wait_time} seconds before retry...")
+                            time.sleep(wait_time)
+                        else:
+                            raise
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Try multiple content selectors
+                content_selectors = [
+                    'article',
+                    '.article-content',
+                    '.content',
+                    '.post-content',
+                    '.entry-content',
+                    '#content',
+                    '.main-content',
+                    '[class*="article"]',
+                    '[class*="content"]'
+                ]
+                
+                article_content = None
+                for selector in content_selectors:
+                    article_content = soup.select_one(selector)
+                    if article_content and len(article_content.get_text().strip()) > 200:
+                        print(f"Found content using selector: {selector}")
+                        break
+                
+                if not article_content:
+                    # Fallback: try to find content by looking for paragraphs
+                    body = soup.find('body')
+                    if body:
+                        paragraphs = body.find_all('p')
+                        if len(paragraphs) > 5:
+                            # Create a container with all paragraphs
+                            article_content = soup.new_tag('div')
+                            for p in paragraphs:
+                                if len(p.get_text().strip()) > 50:  # Only meaningful paragraphs
+                                    article_content.append(p)
+                
+                if article_content:
+                    # Remove unwanted elements
+                    unwanted_tags = ['script', 'style', 'nav', 'header', 'footer', 'aside', 'iframe', 'noscript']
+                    for tag in unwanted_tags:
+                        for element in article_content.find_all(tag):
+                            element.decompose()
+                    
+                    # Remove unwanted classes/ids
+                    unwanted_selectors = [
+                        '[class*="ad"]', '[class*="advertisement"]', '[class*="social"]',
+                        '[class*="share"]', '[class*="comment"]', '[class*="related"]',
+                        '[id*="ad"]', '[id*="advertisement"]'
+                    ]
+                    for selector in unwanted_selectors:
+                        for element in article_content.select(selector):
+                            element.decompose()
+                    
+                    # Get text content
+                    text = article_content.get_text()
+                    
+                    # Clean up the text
+                    text = re.sub(r'\n\s*\n', '\n\n', text)  # Remove extra blank lines
+                    text = re.sub(r'[ \t]+', ' ', text)      # Remove extra spaces
+                    text = text.strip()
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"""# {article_info['title']}
+
+**Published:** {display_date}  
+**Source:** Firearms News  
+**Original Link:** [{article_info['title']}]({article_info['link']})
+
+---
+
+{article_content}
+
+---
+
+*Automatically fetched from Firearms News*  
+*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*
+"""
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi
