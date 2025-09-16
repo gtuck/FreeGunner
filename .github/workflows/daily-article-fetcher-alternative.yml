@@ -225,7 +225,9 @@ jobs:
                     unwanted_selectors = [
                         '[class*="ad"]', '[class*="advertisement"]', '[class*="social"]',
                         '[class*="share"]', '[class*="comment"]', '[class*="related"]',
-                        '[id*="ad"]', '[id*="advertisement"]'
+                        '[id*="ad"]', '[id*="advertisement"]', '[class*="newsletter"]',
+                        '[class*="signup"]', '[class*="subscribe"]', '[class*="email"]',
+                        '[class*="video"]', '[class*="recommend"]'
                     ]
                     for selector in unwanted_selectors:
                         for element in article_content.select(selector):
@@ -234,9 +236,1006 @@ jobs:
                     # Get text content
                     text = article_content.get_text()
                     
-                    # Clean up the text
+                    # Clean up the text with enhanced filtering
                     text = re.sub(r'\n\s*\n', '\n\n', text)  # Remove extra blank lines
                     text = re.sub(r'[ \t]+', ' ', text)      # Remove extra spaces
+                    
+                    # Remove specific advertising text patterns
+                    ad_patterns = [
+                        r'Advertisement\s*×?',
+                        r'Recommended\s*Advertisement',
+                        r'Video That May Interest You\s*×?',
+                        r'GET THE NEWSLETTER.*?Sign Me Up',
+                        r'Join the List and Never Miss a Thing\.?',
+                        r'Email Address\s*Sign Me Up',
+                        r'Newsletter.*?subscription',
+                        r'Subscribe.*?newsletter',
+                        r'Sign up.*?updates',
+                        r'\[Affiliate Disclosure:.*?\]',
+                        r'Affiliate Disclosure:.*?purchases\.',
+                        r'This page contains affiliate links.*?purchases\.',
+                        r'We earn from qualifying purchases\.',
+                        r'×\s*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi,  # Remove standalone × symbols
+                        r'Advertisement\s*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi,
+                        r'Recommended\s*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi
+                    ]
+                    
+                    for pattern in ad_patterns:
+                        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.DOTALL)
+                    
+                    # Remove multiple consecutive newlines and extra spaces again
+                    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+                    text = re.sub(r'[ \t]+', ' ', text)
+                    text = text.strip()
+                    
+                    # Remove any remaining standalone symbols or short meaningless lines
+                    lines = text.split('\n')
+                    cleaned_lines = []
+                    for line in lines:
+                        line = line.strip()
+                        # Skip lines that are just symbols, very short, or advertising-related
+                        if (len(line) > 3 and 
+                            not re.match(r'^[×\s]*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line) and
+                            not re.match(r'^Advertisement.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE) and
+                            not re.match(r'^Recommended.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE) and
+                            not re.match(r'^Video.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE) and
+                            not re.match(r'^GET THE.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE) and
+                            not re.match(r'^Email.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE) and
+                            not re.match(r'^Sign.*Up.*
+                    
+                    if len(text) > 200:  # Make sure we got substantial content
+                        return text
+                
+                return f"Unable to extract article content automatically. Please visit the original link: {url}"
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')[:100]  # Limit length
+
+        def main():
+            try:
+                print("Starting article fetch process...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print(f"Article URL: {article_info['link']}")
+                
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                try:
+                    if article_info['pub_date']:
+                        pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                    else:
+                        pub_date = datetime.now()
+                except:
+                    pub_date = datetime.now()
+                    
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+
+                # Create articles directory
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check for existing file
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"✓ Article saved successfully to: {filepath}")
+                print(f"✓ Article title: {article_info['title']}")
+                print(f"✓ File size: {len(markdown_content)} characters")
+                
+            except Exception as e:
+                print(f"✗ Error in main process: {e}")
+                # Don't exit with error code, just log the failure
+                print("Process completed with errors, but continuing...")
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article_alt.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi, line, re.IGNORECASE)):
+                            cleaned_lines.append(line)
+                    
+                    text = '\n'.join(cleaned_lines)
+                    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Final cleanup of extra newlines
                     text = text.strip()
                     
                     if len(text) > 200:  # Make sure we got substantial content
