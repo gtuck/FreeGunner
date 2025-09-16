@@ -278,21 +278,15 @@ jobs:
                 display_date = pub_date.strftime('%B %d, %Y')
                 
                 # Create markdown content
-                markdown_content = f"""# {article_info['title']}
-
-**Published:** {display_date}  
-**Source:** Firearms News  
-**Original Link:** [{article_info['title']}]({article_info['link']})
-
----
-
-{article_content}
-
----
-
-*Automatically fetched from Firearms News*  
-*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*
-"""
+                markdown_content = f"# {article_info['title']}\n\n"
+                markdown_content += f"**Published:** {display_date}\n"
+                markdown_content += f"**Source:** Firearms News\n"
+                markdown_content += f"**Original Link:** [{article_info['title']}]({article_info['link']})\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"{article_content}\n\n"
+                markdown_content += "---\n\n"
+                markdown_content += f"*Automatically fetched from Firearms News*\n"
+                markdown_content += f"*Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
 
                 # Create articles directory
                 os.makedirs('articles', exist_ok=True)
