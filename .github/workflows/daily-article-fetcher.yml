@@ -1,0 +1,209 @@
+# .github/workflows/daily-article-fetcher-python.yml
+name: Daily Firearms News Article Fetcher (Python)
+
+on:
+  schedule:
+    # Run daily at 9:00 AM UTC (adjust timezone as needed)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allows manual triggering for testing
+
+permissions:
+  contents: write # Required to commit files to the repository
+
+jobs:
+  fetch-article:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 lxml
+        
+    - name: Fetch and process article
+      run: |
+        cat > fetch_article.py << 'EOF'
+        import requests
+        import xml.etree.ElementTree as ET
+        from bs4 import BeautifulSoup
+        import os
+        import re
+        from datetime import datetime
+        from urllib.parse import urljoin
+
+        def fetch_rss_feed():
+            """Fetch and parse the RSS feed to get the latest article."""
+            try:
+                response = requests.get('https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589')
+                response.raise_for_status()
+                
+                root = ET.fromstring(response.content)
+                
+                # Get the first item (most recent)
+                item = root.find('.//item')
+                if item is None:
+                    raise Exception("No items found in RSS feed")
+                
+                title = item.find('title').text
+                link = item.find('link').text
+                pub_date = item.find('pubDate').text
+                description = item.find('description').text if item.find('description') is not None else ""
+                
+                return {
+                    'title': title,
+                    'link': link,
+                    'pub_date': pub_date,
+                    'description': description
+                }
+            except Exception as e:
+                print(f"Error fetching RSS feed: {e}")
+                raise
+
+        def fetch_article_content(url):
+            """Fetch the full article content from the URL."""
+            try:
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Try to find the main article content
+                # These are common selectors for article content
+                content_selectors = [
+                    'article',
+                    '.article-content',
+                    '.content',
+                    '.post-content',
+                    '.entry-content',
+                    '#content',
+                    '.main-content'
+                ]
+                
+                article_content = None
+                for selector in content_selectors:
+                    article_content = soup.select_one(selector)
+                    if article_content:
+                        break
+                
+                if not article_content:
+                    # Fallback: try to find content by looking for paragraphs
+                    paragraphs = soup.find_all('p')
+                    if len(paragraphs) > 5:  # Assume article has multiple paragraphs
+                        article_content = soup
+                
+                if article_content:
+                    # Remove unwanted elements
+                    for element in article_content.find_all(['script', 'style', 'nav', 'header', 'footer', 'aside']):
+                        element.decompose()
+                    
+                    # Get text content
+                    text = article_content.get_text()
+                    
+                    # Clean up the text
+                    text = re.sub(r'\n\s*\n', '\n\n', text)  # Remove extra blank lines
+                    text = re.sub(r'[ \t]+', ' ', text)      # Remove extra spaces
+                    text = text.strip()
+                    
+                    return text
+                else:
+                    return "Unable to extract article content automatically. Please visit the original link."
+                    
+            except Exception as e:
+                print(f"Error fetching article content: {e}")
+                return f"Error fetching article content. Please visit the original link: {url}"
+
+        def sanitize_filename(title):
+            """Sanitize title for use as filename."""
+            # Remove special characters and replace spaces with hyphens
+            sanitized = re.sub(r'[^\w\s-]', '', title)
+            sanitized = re.sub(r'[-\s]+', '-', sanitized)
+            return sanitized.lower().strip('-')
+
+        def main():
+            try:
+                print("Fetching RSS feed...")
+                article_info = fetch_rss_feed()
+                
+                print(f"Found article: {article_info['title']}")
+                print("Fetching article content...")
+                article_content = fetch_article_content(article_info['link'])
+                
+                # Parse publication date
+                pub_date = datetime.strptime(article_info['pub_date'], '%a, %d %b %Y %H:%M:%S %Z')
+                formatted_date = pub_date.strftime('%Y-%m-%d')
+                display_date = pub_date.strftime('%B %d, %Y')
+                
+                # Create markdown content
+                markdown_content = f"""# {article_info['title']}
+
+        **Published:** {display_date}  
+        **Source:** Firearms News  
+        **Original Link:** [{article_info['title']}]({article_info['link']})
+
+        ---
+
+        {article_content}
+
+        ---
+
+        *Automatically fetched from [Firearms News RSS Feed](https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589)*  
+        *Fetched on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*
+        """
+
+                # Create articles directory if it doesn't exist
+                os.makedirs('articles', exist_ok=True)
+                
+                # Create filename
+                sanitized_title = sanitize_filename(article_info['title'])
+                filename = f"{formatted_date}-{sanitized_title}.md"
+                filepath = os.path.join('articles', filename)
+                
+                # Check if file already exists to avoid duplicates
+                if os.path.exists(filepath):
+                    print(f"Article already exists: {filepath}")
+                    return
+                
+                # Write the file
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(markdown_content)
+                
+                print(f"Article saved to: {filepath}")
+                
+                # Set output for GitHub Actions
+                print(f"::set-output name=filename::{filename}")
+                print(f"::set-output name=title::{article_info['title']}")
+                print(f"::set-output name=new_file::true")
+                
+            except Exception as e:
+                print(f"Error in main process: {e}")
+                exit(1)
+
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+        python fetch_article.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add articles/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No new articles to commit"
+        else
+          git commit -m "Add daily article: $(date +%Y-%m-%d)"
+          git push
+        fi
