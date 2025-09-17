@@ -1,0 +1,54 @@
+# How to Make a Transferable M16 Machinegun
+
+**Published:** September 16, 2025  
+**Source:** Firearms News  
+**Original Link:** [How to Make a Transferable M16 Machinegun](https://www.firearmsnews.com/editorial/how-to-transferable-m16-machinegun/532975)
+
+---
+
+How to Make a Transferable M16 Machinegun
+One machinegun to rule them all!
+
+ In the rarefied world of transferable machineguns, the M16 is at the top of the list for desirability. (Photo provided by author.)
+
+September 16, 2025
+By Will Dabbs, MD
+
+Affiliate Disclosure: This page contains affiliate links. We earn from qualifying purchases.Back in the mid-1950’s, Gene Stoner and a few others set out to design an infantry combat rifle that incorporated the latest in aviation technology. The Second World War drove advances in engineering and materials science the likes of which humanity had never before seen. The end result was the Armalite AR-10.Stoner and Company later shrunk the AR-10 down to accommodate the radically new .223 cartridge, itself also a Gene Stoner contrivance. The resulting AR-15 begat the U.S. government’s M16 that ultimately became the longest- serving infantry rifle in American military history. The new SIG M7 Spear is simply a vigorously upgraded version of that same basic design.
+
+Advertisement
+
+×
+
+The key to the M16 is its modularity. With most firearms, the component that accepts the barrel is typically the serialized bit. By contrast, the M16 lower receiver is the controlled component. In this case, the same basic lower receiver can be kitted out with a multitude of barrel assemblies, upper receivers, and buttstocks to become a wide variety of weapons. One common lower receiver can therefore become everything from a .22LR plinking toy up through a pistol-caliber submachine gun to a real-deal assault rifle or even a belt-fed squad automatic weapon.The inaptly-titled Firearms Owners Protection Act (FOPA) outlawed the manufacture of automatic weapons for sale to individuals in 1986. This vile piece of unconstitutional rubbish capped the pool of transferable machineguns at around 176,000. The M16 is one of the more common machineguns in the registry.Transferable ParticularsThis HK416 parts kit rides on a transferable Wilson Arms M16 receiver Dabbs bought back in 1987. With the AR-15/M16 design, it is the lower receiver that is the actual gun. Everything else is fluff. (Photo provided by author.)There are basically four ways to get into a transferable M16. Each has its own positives and negatives. Factory Colt guns are the safest option. These weapons began as selective fire automatic rifles. Many to most of these guns entered circulation as law enforcement (LE) surplus.
+
+Advertisement
+
+×
+
+Original Colt markings command a price premium. Those that are marked “Property of the US Government” cost even more. There are even a few exceptional outliers that bear the stigmata of use at nuclear power plants or specific LE agencies. Colt guns will have reliably in-spec receivers and impeccable build quality.Thanks to the modular nature of the weapon, one transferable lower receiver can become a huge number of guns. (Photo provided by author.)A registered drop-in auto sear (DIAS) is an inspired little widget that fits into the pocket at the rear of a standard semiauto AR-15 lower receiver and does the job of a GI auto sear. Unregistered versions sold freely prior to November 1981 when the ATF declared them to be contraband machineguns via Ruling 81-4. Sears made before that cutoff were grandfathered so long as you didn’t own an AR-15. DIAS manufactured after the 1981 decision, until the cutoff on May 19th, 1986, had to be serialized and registered as machine guns. Unserialized/unregistered DIASs were made completely illegal with the FOPA even if you didn’t own an AR-15. Yeah, it’s that complicated, but a good many were indeed registered prior to 86.The registered drop-in auto sear is the most versatile way to get into a full auto M16. This nifty trinket will move to any standard AR lower receiver, but it is expensive. (Photo provided by Rock Island Auctions)Registered transferable auto sears can be moved easily from one lower receiver to another. Because of its versatility, a DIAS is often more expensive than a Colt factory gun. A DIAS operates with standard GI fire control parts and offers traditional selective fire operation. It is also nigh indestructible. Broadhead Armory, JCB, and Wilson Arms made them prior to 1986 along with several other manufacturers.A registered lightning link (RLL) is a flimsy-looking beast that could be crafted out of sheet steel with some basic hand tools and a little time. The RLL drops into a standard AR lower equipped with stock semiauto internals. This rascal trips the hammer as the bolt goes into battery to create full auto fire. The up side is that, like the DIAS, the RLL moves easily from one gun to another. The down side is that it is full auto only and is the least rugged of the four options. SWD made most of the 900 or so RLLs currently in the registry.The Registered Lightning Link is a simple stamped steel contrivance. You could hypothetically make one by hand with a Dremel tool and a big hacksaw blade if such stuff were legal nowadays. (Photo provided by Rock Island Auctions)Some of the most common M16 variants are machined conversions of semi-auto AR-15 lowers. Converted Colt SP1 lowers sport Colt markings and quality but use a large-diameter front pivot pin that demands an adaptor to accept a GI upper. AR lowers could be converted to machineguns at home via a BATF Form 1 prior to 1986, so lots of people made them.
+
+Recommended
+
+Advertisement
+
+There weren’t all that many semi-auto hosts available back then compared with the number of manufacturers today. The relative longevity, desirability, and cost of these conversions is usually driven by the nature of the original Title 1 AR receiver host. Essential Arms receivers were cast rather than forged and are theoretically not as rugged as those from Schuetzen Gun Works (SGW)/Olympic Arms. SAW, PAWS, Palmetto, and Frankford Arsenal conversions typically used the same Olympic chassis. The Wilson Arms and Armitage International conversions I have seen used EA lowers. Converted Sendra lowers are common as well.Olympic Arms got better at making lower receivers the longer they did it. Lowers produced right before the 1986 ban are generally prettier than those made years before. EA markings are notoriously crude. Rewelded receivers can be a crapshoot. Group Industries made 104 transferable lowers out of stainless steel. Though a bit heavy, they are about unkillable.DetailsConverting a semiauto AR-15 receiver was a fairly straightforward chore. A small pocket needed to be milled out in the back of the receiver to accommodate the GI auto sear. Then a single hole was drilled to accept the sear pin. The selective fire GI parts were then just plug and play.The appeal to an AR receiver conversion is that nothing needed to be timed or fitted. Additionally, the design of the M16 is such that the lower receiver bears relatively little stress. So long as it is not abused, a transferable M16 lower should last about forever.The M16 receiver (left) sports enough space in the rear for a GI autosear along with the corresponding hole for the pin. Early AR-15s had space here, but man- ufacturers later added more material to block the insertion of full-auto sears in order to make ATF happy. (Photo provided by author.)Even if it is abused, there are a few artisan gunsmiths out there who can repair literally anything. Sienna Armory recently sold a handful of movie-industry surplus transferable M16 lowers on GunBroker that looked like they had been run through some kind of shredder. The rear receiver rings were ripped and crushed. Some ham-fisted actor likely dropped them out of a helicopter, yet these trashed receivers still brought $18,000 apiece.The reason this mangled scrap still cost so much is that somebody will weld the broken bits back up and restore them to service for less than an original undamaged receiver might cost. In this case, you’re really buying the registration paper and the raw material.PricesMy old transferable M16 receiver is the hardest-working gun in the safe. Over the years, it has been a wide variety of disparate weapons. (Photo provided by author.)According to MachinegunPriceGuide.com, a typical AR-15 receiver conversion was commanding around $12,000 back in 2003. Nowadays, that same gun is running closer to $30k. RLLs are usually slightly cheaper. I bought my stripped transferable Wilson Arms M16 receiver back in 1987 for $600 out of Shotgun News, the predecessor to the superlative periodical you seem currently to be clutching. That’s about $1,850 in today’s money.A Colt M16A1 sold for around $15,000 in 2003 and hovers around $42,000 today. Factory-correct M16A2’s are markedly more expensive. The first prototype M4 carbines were developed in 1985. I have seen a couple of unfired factory original pre-86 M4’s for sale with asking prices north of $100,000.
+Advertisement
+
+In 2003, an RDIAS averaged about $12k. By the end of 2024 they were averaging $50,000 or more. Prior to 1981, unregistered versions sold for $29.95 in Shotgun News.PracticalitiesMachinegun prices never go down. The supply is fixed, and demand climbs each and every year. In many ways, the transferable M16 receiver is indeed the ultimate civilian machinegun. Treat it with respect, and that registered lower is unkillable. Should you burn out a barrel or crack a bolt, then you can just punch a couple of pins, drop in a fresh upper, and start over from scratch. As a result, whatever upper is on the gun at the time of sale doesn’t much matter.This retro ad offers unregistered DIAS by RPB for $29.95 or ten for $175. (Photo provided by author.)Over the past 38 years, my M16 lower has been just about everything. I shot enough raw lead .22 rimfires through a conversion device to occlude the barrel. It has run more 9mm and 5.56mm ammo than I might reasonably catalog. It currently plays host to a demilled HK416 parts kit that is pretty sweet. These original German HK parts are essentially unobtainable, but Brownells will sell you exactly the same thing brand spanking new at a reasonable price.My M16 receiver and my wife are the only two really good investments I ever made. I’d love to be able to go back in time to 1987, go without food for a year, and pick up half a dozen more. However, I can’t much complain. That high-mileage M16 is indeed the ideal machinegun.  
+
+Video That May Interest You
+
+×
+
+GET THE NEWSLETTER
+ Join the List and Never Miss a Thing.
+
+Email Address
+
+Sign Me Up
+
+---
+
+*Automatically fetched from [Firearms News RSS Feed](https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589)*  
+*Fetched on: 2025-09-17 09:08:21 UTC*
