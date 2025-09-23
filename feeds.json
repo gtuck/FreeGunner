@@ -1,4 +1,30 @@
 [
-  { "FeedURL": "https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589", "Active": true },
-  { "FeedURL": "https://www.gunsandammo.com/RSS.aspx?websiteid=1000&listingid=452228", "Active": true }
+  {
+    "FeedURL": "https://www.gunsandammo.com/RSS.aspx?websiteid=1000&listingid=452228",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.gunsandammo.com/RSS.aspx?websiteid=1000&listingid=1087",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.gunsandammo.com/RSS.aspx?websiteid=1000&listingid=468972",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=307375",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.handgunsmag.com/RSS.aspx?websiteid=82806&listingid=82897",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.rifleshootermag.com/RSS.aspx?websiteid=82502&listingid=82576",
+    "Active": true
+  },
+  {
+    "FeedURL": "https://www.shootingtimes.com/RSS.aspx?websiteid=82665&listingid=82732",
+    "Active": true
+  }
 ]
