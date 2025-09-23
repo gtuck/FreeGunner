@@ -2,7 +2,7 @@ name: Daily Article Researcher
 
 on:
   schedule:
-    - cron: "0 9 * * *"   # 9:00 AM UTC
+    - cron: "0 5 * * *"   # 9:00 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -12,12 +12,18 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
+      # Local config files / defaults (overridable in .env)
       DOTENV_PATH: .env
       FEEDS_FILE: feeds.json
       HISTORY_FILE: history.json
       OUTPUT_DIR: articles
       RESULTS_PER_QUERY: "8"
       USER_AGENT: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125 Safari/537.36"
+      DEFAULT_RSS: "https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589"
+
+      # 🔐 Use repository/organization Secrets for Google Programmable Search
+      GCS_API_KEY: ${{ secrets.GCS_API_KEY }}
+      GCS_CX: ${{ secrets.GCS_CX }}
 
     steps:
       - name: Checkout
@@ -48,14 +54,15 @@ jobs:
           from bs4 import BeautifulSoup
 
           def getenv(k, d=None): 
-              v = os.getenv(k, d); 
+              v = os.getenv(k, d)
               return v if v is not None else d
 
           # Load .env (best effort)
           try:
               from dotenv import load_dotenv
               dp = getenv("DOTENV_PATH", ".env")
-              if Path(dp).is_file(): load_dotenv(dp)
+              if Path(dp).is_file():
+                  load_dotenv(dp)
           except Exception:
               pass
 
@@ -64,24 +71,25 @@ jobs:
           OUTPUT_DIR   = getenv("OUTPUT_DIR", "articles")
           RESULTS_PER_QUERY = int(getenv("RESULTS_PER_QUERY", "8"))
           USER_AGENT   = getenv("USER_AGENT", "Mozilla/5.0")
+          DEFAULT_RSS  = getenv("DEFAULT_RSS", "https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589")
+
+          # 🔐 From repo/org Secrets (preferred)
           GCS_API_KEY  = getenv("GCS_API_KEY", "")
           GCS_CX       = getenv("GCS_CX", "")
-          DEFAULT_RSS  = getenv("DEFAULT_RSS", "https://www.firearmsnews.com/RSS.aspx?websiteid=77508&listingid=77589")
 
           sess = requests.Session()
           sess.headers.update({"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
 
           def read_feeds(p: Path):
               if not p.exists():
-                  data = [{"FeedURL": DEFAULT_RSS, "Active": True}]
+                  data=[{"FeedURL": DEFAULT_RSS, "Active": True}]
                   p.write_text(json.dumps(data, indent=2))
                   return data
-              if p.suffix.lower() == ".json":
+              if p.suffix.lower()==".json":
                   return json.loads(p.read_text())
               out=[]
               with p.open(newline="", encoding="utf-8") as f:
-                  r=csv.DictReader(f)
-                  for row in r:
+                  for row in csv.DictReader(f):
                       url=(row.get("FeedURL") or "").strip()
                       act=(row.get("Active") or "true").strip().lower() in ("1","true","yes","y")
                       if url: out.append({"FeedURL": url, "Active": act})
@@ -89,18 +97,18 @@ jobs:
 
           def read_history(p: Path):
               if not p.exists(): return set()
-              if p.suffix.lower() == ".json":
+              if p.suffix.lower()==".json":
                   try: return set(json.loads(p.read_text()))
                   except Exception: return set()
               links=set()
               with p.open(newline="", encoding="utf-8") as f:
                   for row in csv.DictReader(f):
-                      link=(row.get("Link") or "").strip()
-                      if link: links.add(link)
+                      L=(row.get("Link") or "").strip()
+                      if L: links.add(L)
               return links
 
           def write_history(p: Path, links: set):
-              if p.suffix.lower() == ".json":
+              if p.suffix.lower()==".json":
                   p.write_text(json.dumps(sorted(links), indent=2))
               else:
                   with p.open("w", newline="", encoding="utf-8") as f:
@@ -114,8 +122,8 @@ jobs:
                       root=ET.fromstring(r.content)
                       it=root.find(".//item")
                       if it is None: return None
-                      def gx(t):
-                          el=it.find(t); return el.text.strip() if el is not None and el.text else ""
+                      def gx(tag):
+                          el=it.find(tag); return el.text.strip() if el is not None and el.text else ""
                       return {"title": gx("title"), "link": gx("link"), "pubDate": gx("pubDate"), "description": gx("description")}
                   except Exception as e:
                       if a==2: 
@@ -123,4 +131,152 @@ jobs:
                       time.sleep(5)
 
           def gsearch(q: str, n: int):
-              if n
+              if not (GCS_API_KEY and GCS_CX): return []
+              try:
+                  r=sess.get("https://www.googleapis.com/customsearch/v1",
+                             params={"key":GCS_API_KEY,"cx":GCS_CX,"q":q,"num":min(n,10)},
+                             timeout=30)
+                  r.raise_for_status()
+                  items=(r.json().get("items") or [])
+                  return [{"title":i.get("title","").strip(),"link":i.get("link","").strip(),"snippet":(i.get("snippet") or "").strip()} for i in items]
+              except Exception as e:
+                  print(f"[CSE ERROR] {e}", file=sys.stderr); return []
+
+          def sanitize_filename(s: str):
+              s=re.sub(r"[^\w\s-]","",s); s=re.sub(r"[-\s]+","-",s).strip("-").lower()
+              return s or "article"
+
+          def parse_rfc2822(s: str):
+              try: 
+                  return datetime.strptime(s,"%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=timezone.utc)
+              except Exception:
+                  return datetime.now(timezone.utc)
+
+          def scrape_body(url: str):
+              try:
+                  r=sess.get(url, timeout=30); r.raise_for_status()
+                  soup=BeautifulSoup(r.content,"html.parser")
+                  sels=["article",".article-content",".content",".post-content",".entry-content","#content",".main-content"]
+                  root=None
+                  for sel in sels:
+                      root=soup.select_one(sel)
+                      if root: break
+                  if not root:
+                      ps=soup.find_all("p")
+                      if len(ps)>=3: root=soup
+                  if not root: return ""
+                  for bad in root.find_all(["script","style","nav","header","footer","aside"]): bad.decompose()
+                  txt=root.get_text("\n")
+                  txt=re.sub(r"\n\s*\n","\n\n",txt); txt=re.sub(r"[ \t]+"," ",txt)
+                  return txt.strip()
+              except Exception as e:
+                  print(f"[SCRAPE ERROR] {url}: {e}", file=sys.stderr); return ""
+
+          def write_md(article, results, body, out_dir: Path):
+              pub=parse_rfc2822(article.get("pubDate") or "")
+              date_slug=pub.strftime("%Y-%m-%d")
+              disp=pub.strftime("%B %d, %Y")
+              title=article.get("title") or "Untitled"
+              link=article.get("link") or ""
+              fname=f"{date_slug}-{sanitize_filename(title)}.md"
+              p=out_dir/fname
+              lines=[]
+              lines.append(f"# {title}\n")
+              lines.append(f"**Published:** {disp}  ")
+              lines.append(f"**Original Link:** [{title}]({link})\n")
+              lines.append("---\n")
+              if body:
+                  lines.append("## Article Text (extracted)\n\n"); lines.append(body+"\n\n---\n")
+              lines.append("## Research Results\n")
+              if results:
+                  for i,r in enumerate(results,1):
+                      t=r["title"].replace("\n"," ").strip()
+                      u=r["link"].strip()
+                      s=r["snippet"].replace("\n"," ").strip()
+                      lines.append(f"{i}. **[{t}]({u})** — {s}")
+                  lines.append("")
+              else:
+                  lines.append("_Google Custom Search not configured or no results._\n")
+              lines.append("---\n")
+              lines.append(f"*Fetched on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S %Z')}*")
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_text("\n".join(lines), encoding="utf-8")
+              return fname
+
+          root=Path(".").resolve()
+          feeds_path=root/FEEDS_FILE
+          hist_path=root/HISTORY_FILE
+          out_dir=root/OUTPUT_DIR
+
+          feeds=read_feeds(feeds_path)
+          history=read_history(hist_path)
+
+          processed=[]
+          created=[]
+
+          for f in feeds:
+              if not f.get("Active", True): continue
+              rss=(f.get("FeedURL") or "").strip()
+              if not rss: continue
+              item=fetch_rss_first_item(rss)
+              if not item or not item.get("link"): continue
+              L=item["link"].strip()
+              if L in history: continue
+              title=(item.get("title") or "").strip()
+              print(f"[NEW] {title}")
+              results=gsearch(title, RESULTS_PER_QUERY)
+              body=scrape_body(L)
+              fname=write_md(item, results, body, out_dir)
+              history.add(L)
+              created.append(str((out_dir/fname).as_posix()))
+              processed.append({"title":title,"link":L,"file":fname})
+
+          write_history(hist_path, history)
+
+          # Outputs + Step Summary + Notification
+          any_new = "true" if created else "false"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fo:
+              fo.write(f"any_new={any_new}\n")
+              fo.write(f"new_files={json.dumps(created)}\n")
+
+          summary=[]
+          summary.append("### Daily Article Researcher — Summary")
+          summary.append(f"- Feeds file: `{FEEDS_FILE}`")
+          summary.append(f"- History file: `{HISTORY_FILE}`")
+          summary.append(f"- Output dir: `{OUTPUT_DIR}`")
+          summary.append("")
+          if processed:
+              summary.append(f"**New articles:** {len(processed)}")
+              for a in processed:
+                  summary.append(f"- [{a['title']}]({a['link']}) → `articles/{a['file']}`")
+          else:
+              summary.append("**New articles:** 0")
+          summary.append("")
+          summary.append(f"_Run at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S %Z')}_")
+
+          try:
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as s:
+                  s.write("\n".join(summary) + "\n")
+          except Exception:
+              pass
+
+          if processed:
+              print("::notice title=Daily Article Researcher::New article(s) added. See Job Summary for details.")
+          else:
+              print("::notice title=Daily Article Researcher::No new articles today. See Job Summary for details.")
+          PY
+
+          python action_main.py
+
+      - name: Commit & push changes
+        if: steps.fetch.outputs.any_new == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "${OUTPUT_DIR}/" "${HISTORY_FILE}" || true
+          if git diff --staged --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "chore: add researched article(s) $(date -u +'%Y-%m-%d')"
+            git push
+          fi
