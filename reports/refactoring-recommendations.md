@@ -225,7 +225,7 @@ def normalise_url(self, url: str) -> str:
     """Strip UTM and other tracking parameters."""
     TRACKING_PARAMS = {"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"}
     parsed = urlparse(url)
-    # parse_qsl returns a list of (key, value) tuples — safe to pass directly to urlencode
+    # parse_qsl returns (key, value) tuples, which urlencode accepts directly.
     clean_qs = [(k, v) for k, v in parse_qsl(parsed.query) if k not in TRACKING_PARAMS]
     return urlunparse(parsed._replace(query=urlencode(clean_qs), fragment=""))
 ```
