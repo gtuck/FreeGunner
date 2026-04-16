@@ -11,6 +11,7 @@ Environment Variables:
     HISTORY_FILE: Path to processed articles history (default: history.json)
     OUTPUT_DIR: Directory for generated articles (default: articles)
     RESULTS_PER_QUERY: Number of research results per query (default: 8)
+    MAX_WORKERS: Maximum concurrent feed-processing threads (default: 4)
     USER_AGENT: HTTP User Agent string
     DEFAULT_RSS: Default RSS feed URL
     GCS_API_KEY: Google Custom Search API key
@@ -24,6 +25,8 @@ import csv
 import re
 import time
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Any
@@ -159,8 +162,8 @@ class ArticleFetcher:
         except Exception as e:
             logger.error(f"Failed to write history to {path}: {e}")
 
-    def fetch_rss_first_item(self, url: str) -> Optional[Dict[str, str]]:
-        """Fetch the first item from an RSS feed."""
+    def fetch_rss_items(self, url: str) -> List[Dict[str, str]]:
+        """Fetch all items from an RSS feed."""
         for attempt in range(self.max_retries):
             try:
                 logger.debug(f"Fetching RSS from {url} (attempt {attempt + 1})")
@@ -168,30 +171,34 @@ class ArticleFetcher:
                 response.raise_for_status()
                 
                 root = ET.fromstring(response.content)
-                item = root.find(".//item")
+                items = root.findall(".//item")
                 
-                if item is None:
+                if not items:
                     logger.warning(f"No items found in RSS feed: {url}")
-                    return None
+                    return []
                 
-                def get_text(tag: str) -> str:
+                def get_text(item: Any, tag: str) -> str:
                     element = item.find(tag)
                     return element.text.strip() if element is not None and element.text else ""
                 
-                result = {
-                    "title": get_text("title"),
-                    "link": get_text("link"),
-                    "pubDate": get_text("pubDate"),
-                    "description": get_text("description")
-                }
+                results = []
+                for item in items:
+                    link = get_text(item, "link")
+                    if link:
+                        results.append({
+                            "title": get_text(item, "title"),
+                            "link": link,
+                            "pubDate": get_text(item, "pubDate"),
+                            "description": get_text(item, "description")
+                        })
                 
-                logger.info(f"Fetched article: {result['title']}")
-                return result
+                logger.info(f"Fetched {len(results)} item(s) from {url}")
+                return results
                 
             except Exception as e:
                 if attempt == self.max_retries - 1:
                     logger.error(f"Failed to fetch RSS from {url} after {self.max_retries} attempts: {e}")
-                    return None
+                    return []
                 logger.warning(f"RSS fetch attempt {attempt + 1} failed: {e}, retrying in {self.retry_delay}s")
                 time.sleep(self.retry_delay)
 
@@ -361,8 +368,61 @@ class ArticleFetcher:
             logger.error(f"Failed to write markdown file: {e}")
             return ""
 
+    def _process_single_feed(
+        self,
+        feed_config: Dict[str, Any],
+        history: Set[str],
+        history_lock: threading.Lock,
+        output_dir: Path,
+    ) -> List[Dict[str, Any]]:
+        """Fetch and process all new articles from a single feed.
+
+        Thread-safe: uses *history_lock* to guard reads and writes to *history*.
+        Returns a list of result dicts for every article that was successfully written.
+        """
+        rss_url = (feed_config.get("FeedURL") or "").strip()
+        if not rss_url:
+            return []
+
+        articles = self.fetch_rss_items(rss_url)
+        feed_results: List[Dict[str, Any]] = []
+
+        for article in articles:
+            article_link = (article.get("link") or "").strip()
+            if not article_link:
+                continue
+
+            with history_lock:
+                if article_link in history:
+                    logger.info(f"Article already processed: {article.get('title', 'Unknown')}")
+                    continue
+                # Reserve the link immediately so concurrent feeds do not duplicate it.
+                history.add(article_link)
+
+            title = (article.get("title") or "").strip()
+            logger.info(f"Processing new article: {title}")
+
+            search_results = self.google_search(title, self.results_per_query)
+            content = self.scrape_article_content(article_link)
+            filename = self.write_markdown_file(article, search_results, content, output_dir)
+
+            if filename:
+                feed_results.append({
+                    "title": title,
+                    "link": article_link,
+                    "file": filename,
+                })
+            else:
+                # File write failed; remove the reservation so it can be retried on the next run.
+                # Any concurrent thread that already skipped this link will not retry it within
+                # this run, but the next scheduled run will pick it up from the feed again.
+                with history_lock:
+                    history.discard(article_link)
+
+        return feed_results
+
     def process_feeds(self) -> Dict[str, Any]:
-        """Process all active feeds and return results."""
+        """Process all active feeds concurrently and return results."""
         root = Path(".").resolve()
         feeds_path = root / self.feeds_file
         history_path = root / self.history_file
@@ -370,54 +430,36 @@ class ArticleFetcher:
         
         logger.info(f"Processing feeds from {feeds_path}")
         
-        # Load configuration
         feeds = self.read_feeds(feeds_path)
         history = self.read_history(history_path)
-        
-        processed_articles = []
-        created_files = []
-        
-        for feed_config in feeds:
-            if not feed_config.get("Active", True):
-                continue
-            
-            rss_url = (feed_config.get("FeedURL") or "").strip()
-            if not rss_url:
-                continue
-            
-            # Fetch latest article from RSS
-            article = self.fetch_rss_first_item(rss_url)
-            if not article or not article.get("link"):
-                continue
-            
-            article_link = article["link"].strip()
-            if article_link in history:
-                logger.info(f"Article already processed: {article.get('title', 'Unknown')}")
-                continue
-            
-            title = (article.get("title") or "").strip()
-            logger.info(f"Processing new article: {title}")
-            
-            # Perform research
-            search_results = self.google_search(title, self.results_per_query)
-            
-            # Scrape article content
-            content = self.scrape_article_content(article_link)
-            
-            # Write markdown file
-            filename = self.write_markdown_file(article, search_results, content, output_dir)
-            
-            if filename:
-                # Update history
-                history.add(article_link)
-                created_files.append(str((output_dir / filename).as_posix()))
-                processed_articles.append({
-                    "title": title,
-                    "link": article_link,
-                    "file": filename
-                })
-        
-        # Save updated history
+        history_lock = threading.Lock()
+
+        active_feeds = [
+            fc for fc in feeds
+            if fc.get("Active", True) and (fc.get("FeedURL") or "").strip()
+        ]
+
+        processed_articles: List[Dict[str, Any]] = []
+        created_files: List[str] = []
+
+        max_workers = int(getenv("MAX_WORKERS", "4"))
+        logger.info(f"Processing {len(active_feeds)} active feed(s) with up to {max_workers} worker(s)")
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self._process_single_feed, fc, history, history_lock, output_dir): fc
+                for fc in active_feeds
+            }
+            for future in as_completed(futures):
+                try:
+                    feed_results = future.result()
+                    for result in feed_results:
+                        created_files.append(str((output_dir / result["file"]).as_posix()))
+                        processed_articles.append(result)
+                except Exception as e:
+                    logger.error(f"Feed processing raised an unexpected error: {e}")
+
+        # Persist history once, after all threads have finished.
         self.write_history(history_path, history)
         
         return {
