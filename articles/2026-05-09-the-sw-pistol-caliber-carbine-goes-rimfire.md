@@ -1,0 +1,23 @@
+# The S&W Pistol-Caliber Carbine Goes Rimfire
+
+**Published:** May 09, 2026  
+**Original Link:** [The S&W Pistol-Caliber Carbine Goes Rimfire](https://www.rifleshootermag.com/editorial/smith-wesson-rimfire-pcc/551378)
+
+---
+
+## Research Results
+
+1. **[Smith & Wesson Folding Pistol Caliber Carbine .22 - Lipsey's Bulletin](https://www.lipseysbulletin.com/uncategorized/smith-wesson-folding-pistol-caliber-carbine-22/)** — Nov 24, 2025 ... 22 features a firing handle identical to the S&W M&P compact 9mm handgun. ... 22 as the round count went higher. The second range outing ...
+2. **[22lr Rifle vs 9mm PCC : r/liberalgunowners - Reddit](https://www.reddit.com/r/liberalgunowners/comments/1rpj6nr/22lr_rifle_vs_9mm_pcc/)** — Mar 10, 2026 ... 22 is cheap to plink with, small and lightweight, and would be good if I ever needed to hunt small game. Going with a PCC in 9mm still saves me ...
+3. **[Shooting Times: Guns, Gear, History & How-To](https://www.shootingtimes.com/)** — The S&W Pistol-Caliber Carbine Goes Rimfire. Smith & Wesson's .22 LR M&P FPC 22 is perfect for a day on the shooting course, and it makes for an ideal training ...
+4. **[Ruger PC carbine or 10/22 : r/liberalgunowners - Reddit](https://www.reddit.com/r/liberalgunowners/comments/1gbdl6w/ruger_pc_carbine_or_1022/)** — Oct 24, 2024 ... ... gun collection is complete with a 22lr rifle, whereas a pistol caliber carbine is more of a fun "filler" gun. HeloRising. • 2y ago.
+5. **[500 S&W barrel length options - Facebook](https://www.facebook.com/groups/730738197010245/posts/5404459756304709/)** — Aug 16, 2022 ... Do I go short and 16" or longer rifle with a 22"? Or do I split it at 18"? With a pistol caliber it's not like I'm gaining a ton of velocity ...
+6. **[Timney Triggers](https://timneytriggers.com/)** — Find Your Next Trigger · Hunting · Competition · Handguns · Pistol Caliber Carbine · Target Shooting.
+7. **[M&P®22 COMPACT | Smith & Wesson](https://www.smith-wesson.com/product/m-p-22-compact)** — Precision built to be the most accurate and reliable firearms, M&P pistols are an experience you have to feel to believe. Durable and comfortable, they are ...
+8. **[Caliber Sizes: Choosing the Right Suppressor - Silencer Central](https://www.silencercentral.com/blog/caliber-sizes-choosing-the-right-suppressor/)** — Mar 4, 2025 ... 30 caliber rifle cartridge is safe to fire through it. The same goes for handgun caliber sizes. Some handgun suppressors will not accommodate ...
+9. **[22 Rifles For Sale | 22 Long Rifles | Rimfire Rifles - Gritr Sports](https://gritrsports.com/shooting/firearms/rifles/22-rifles/)** — We work with top gun-manufacturing brands so that you could get only the highest-quality firearms. The .22 caliber is incredibly versatile and used ...
+10. **[Is there a practical use for a 9mm carbine, like the Hi-Point 995TS ...](https://www.quora.com/Is-there-a-practical-use-for-a-9mm-carbine-like-the-Hi-Point-995TS-that-cant-be-done-more-efficiently-by-an-AR15-or-Ruger-10-22)** — Nov 23, 2018 ... ... at a silhouette target. Also shown is an S&W Shield40. That pistol might be my first go to but that10/22 is always there. Upvote ·. 9937.
+
+---
+
+*Fetched on: 2026-05-10 06:05:11 UTC*
